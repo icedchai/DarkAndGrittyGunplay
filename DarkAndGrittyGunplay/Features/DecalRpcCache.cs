@@ -75,7 +75,6 @@ namespace DarkAndGrittyGunplay.Features
                 _template = null;
             }
         }
-        }
 
         public static void PlaceBlood(Vector3 position, Vector3 direction)
         {

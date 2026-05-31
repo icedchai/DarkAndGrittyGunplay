@@ -9,7 +9,7 @@ using UnityEngine;
 namespace DarkAndGrittyGunplay
 {
     public class Config
-    {
+    { 
         public Dictionary<string, BoneGoreSpecs> GoreSettings { get; set; } = new Dictionary<string, BoneGoreSpecs>()
         {
             {

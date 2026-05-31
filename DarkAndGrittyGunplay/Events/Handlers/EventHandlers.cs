@@ -51,10 +51,11 @@ namespace DarkAndGrittyGunplay.Events.Handlers
             { "leg.r", new Vector3(0.14f, -0.49f, -0.02f) },
         };
 
+        Dictionary<Player, List<Gib>> gibs = new Dictionary<Player, List<Gib>>();
+
         private void OnRoundStarted()
         {
-            GameObject gameObject = new GameObject("gore_spawner");
-            gameObject.AddComponent<GoreSpawner>();
+            gibs.Clear();
         }
 
         private void OnPlayerChangedRole(PlayerChangedRoleEventArgs e)
@@ -77,6 +78,58 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                     }
                 });
             }*/
+            if (!e.OldRole.IsHuman())
+            {
+                return;
+            }
+
+            if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
+            {
+                foreach(Gib gib in gibList)
+                {
+                    gib.Remove();
+                }
+            }
+            gibs.Remove(e.Player);
+
+
+            List<Gib> spawnedGibs = new List<Gib>();
+
+            Config config = Plugin.Singleton.Config;
+            foreach (var pair in dict)
+            {
+                if (config.GoreSettings.TryGetValue(pair.Key.ToLower(), out var goreSpecs))
+                {
+                    for (int i = 0; i < goreSpecs.GoreBits; i++)
+                    {
+                        PrimitiveObjectToy gib = PrimitiveObjectToy.Create(Vector3.zero, null, false);
+                        gib.Scale = new Vector3(0.1f, 0.1f, 0.1f);
+                        gib.Type = PrimitiveType.Cube;
+                        gib.Color = Color.red;
+                        gib.Flags = AdminToys.PrimitiveFlags.Visible;
+                        gib.MovementSmoothing = 60;
+                        gib.Spawn();
+                        /*
+                        TextToy text = TextToy.Create(gib.Transform, false);
+                        text.TextFormat = pair.Key;
+                        text.Transform.localPosition = new (1, 1, 1);
+                        text.Spawn();*/
+                        Gib goreBit = gib.GameObject.AddComponent<Gib>();
+                        goreBit.pair = pair;
+                        spawnedGibs.Add(goreBit);
+                    }
+                    foreach (SerializedSchematic gib in goreSpecs.Gibs)
+                    {
+                        SchematicObject bit = ObjectSpawner.SpawnSchematic(gib.SchematicName, Vector3.zero);
+                        Gib goreBit = bit.gameObject.AddComponent<Gib>();
+                        goreBit.isSplatter = false;
+                        goreBit.pair = pair;
+                        goreBit.schematicInfo = gib;
+                        spawnedGibs.Add(goreBit);
+                    }
+                }
+            }
+            gibs.Add(e.Player, spawnedGibs);
         }
 
         private void OnPlayerSpawningRagdoll(PlayerSpawningRagdollEventArgs e)
@@ -94,6 +147,18 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                 return;
             }
             Config config = Plugin.Singleton.Config;
+
+            if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
+            {
+                foreach(Gib gib in gibList)
+                {
+                    gib.Activate(e);
+                }
+            }
+            gibs.Remove(e.Player);
+
+            return;
+
             foreach (var pair in dict)
             {
                 if (config.GoreSettings.TryGetValue(pair.Key.ToLower(), out var goreSpecs))
@@ -118,7 +183,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         gib.GameObject.AddComponent<Gib>();
 
 
-                        var sphereCollider = gib.GameObject.AddComponent<BoxCollider>();
+                        var sphereCollider = gib.GameObject.AddComponent<SphereCollider>();
                         sphereCollider.gameObject.layer =  1 << 25;
                     }
                     foreach (SerializedSchematic gib in goreSpecs.Gibs)
