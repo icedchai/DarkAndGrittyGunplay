@@ -24,7 +24,7 @@ namespace DarkAndGrittyGunplay.Features
         {
             if (!gibQueue.IsEmpty())
             {
-                for (int i = 0; i < 200; i++)
+                for (int i = 0; i < Plugin.Singleton.Config.MaxGibsActivatedPerTick; i++)
                 {
                     Gib gib = gibQueue.Dequeue();
                     if (gib == null)

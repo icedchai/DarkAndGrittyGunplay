@@ -100,7 +100,7 @@ namespace DarkAndGrittyGunplay.Features
             rb.AddForce((pair.Value + new Vector3(0, 0.25f, 0)) * 1000 + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
-            Timing.CallDelayed(Plugin.Singleton.Config.GibPhysicsLifetime, () =>
+            Timing.CallDelayed(Plugin.Singleton.Config.GibPhysicsLifetime + Random.Range(0f, Plugin.Singleton.Config.GibPhysicsLifetimeVariance), () =>
             {
                 if (gameObject != null)
                 {
@@ -113,7 +113,7 @@ namespace DarkAndGrittyGunplay.Features
                 }
             });
 
-            Timing.CallDelayed(Plugin.Singleton.Config.GibLifetime, () =>
+            Timing.CallDelayed(Plugin.Singleton.Config.GibLifetime + Random.Range(0f, Plugin.Singleton.Config.GibLifetimeVariance), () =>
             {
                 if (gameObject != null)
                 {

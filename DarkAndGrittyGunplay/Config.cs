@@ -11,10 +11,20 @@ namespace DarkAndGrittyGunplay
 {
     public class Config
     {
-        [Description("How long before a gib has its physics disabled")]
+        [Description("How many gibs can be activated per tick. The lower this value is, the easier on the server, but gibs will be noticably delayed if there are a lot of exploding people.")]
+        public int MaxGibsActivatedPerTick { get; set; } = 250;
+
+        [Description("How long in seconds before a gib has its physics disabled")]
         public float GibPhysicsLifetime { get; set; } = 30;
 
+        [Description("A number, such that the gib physics lifetime will elapse between zero and this number seconds more.")]
+        public float GibPhysicsLifetimeVariance { get; set; } = 15f;
+
+        [Description("How long in seconds before a gib is deleted automatically")]
         public float GibLifetime { get; set; } = 300;
+
+        [Description("A number, such that the gib lifetime will elapse between zero and this number seconds more.")]
+        public float GibLifetimeVariance { get; set; } = 15f;
         public Dictionary<string, BoneGoreSpecs> GoreSettings { get; set; } = new Dictionary<string, BoneGoreSpecs>()
         {
             {

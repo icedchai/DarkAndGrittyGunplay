@@ -11,6 +11,7 @@ using PlayerRoles.FirstPersonControl;
 using PlayerStatsSystem;
 using ProjectMER.Features;
 using ProjectMER.Features.Objects;
+using ProjectMER.Features.Serializable.Schematics;
 using System.Dynamic;
 using System.Numerics;
 using UnityEngine;
@@ -116,6 +117,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         gib.Color = Color.red;
                         gib.Flags = AdminToys.PrimitiveFlags.Visible;
                         gib.MovementSmoothing = 60;
+                        gib.SyncInterval = 0f;
                         gib.Spawn();
                         /*
                         TextToy text = TextToy.Create(gib.Transform, false);
@@ -129,7 +131,13 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                     }
                     foreach (SerializedSchematic gib in goreSpecs.Gibs)
                     {
-                        SchematicObject bit = ObjectSpawner.SpawnSchematic(gib.SchematicName, Vector3.zero);
+                        
+                        if (!MapUtils.TryGetSchematicDataByName(gib.SchematicName, out SchematicObjectDataList data))
+                        {
+                            continue;
+                        }
+
+                        ObjectSpawner.TrySpawnSchematic(new SerializableSchematic() { SchematicName = gib.SchematicName }, out SchematicObject bit);
 
                         foreach (AdminToyBase adminToy in bit.AdminToyBases)
                         {
@@ -154,6 +162,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                                     }
 
                                     primToy.NetworkPrimitiveFlags ^= PrimitiveFlags.Collidable;
+                                    primToy.syncInterval = 0f;
                                 }
                             }
                         }
