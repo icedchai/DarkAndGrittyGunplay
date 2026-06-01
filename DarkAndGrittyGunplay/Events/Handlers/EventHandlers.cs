@@ -132,17 +132,24 @@ namespace DarkAndGrittyGunplay.Events.Handlers
             gibs.Add(e.Player, spawnedGibs);
         }
 
+        private bool ShouldExplodePlayer(RoleTypeId role, DamageHandlerBase damageHandler)
+        {
+            return (role.IsHuman() || role == RoleTypeId.Scp0492 || role == RoleTypeId.Scp049) && (damageHandler is ExplosionDamageHandler || damageHandler is Scp096DamageHandler || damageHandler is JailbirdDamageHandler);
+        }
+
         private void OnPlayerSpawningRagdoll(PlayerSpawningRagdollEventArgs e)
         {
-            if (!e.RagdollPrefab.Role.IsHuman() && e.DamageHandler is ExplosionDamageHandler edh)
+            if (!ShouldExplodePlayer(e.Player.Role, e.DamageHandler))
             {
-                e.IsAllowed = false;
+                return;
             }
+
+            e.IsAllowed = false;
         }
 
         private void OnPlayerDeath(PlayerDeathEventArgs e)
         {
-            if (!e.OldRole.IsHuman() || e.DamageHandler is not ExplosionDamageHandler edh)
+            if (!ShouldExplodePlayer(e.OldRole, e.DamageHandler))
             {
                 return;
             }
