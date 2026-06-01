@@ -11,7 +11,7 @@ namespace DarkAndGrittyGunplay
 {
     public class Config
     {
-        [Description("How many gibs can be activated per tick. The lower this value is, the easier on the server, but gibs will be noticably delayed if there are a lot of exploding people.")]
+        [Description("How many gibs can be activated per tick. The lower this value is, the easier on the server, but gibs will be noticeably delayed if there are a lot of exploding people.")]
         public int MaxGibsActivatedPerTick { get; set; } = 250;
 
         [Description("How long in seconds before a gib has its physics disabled")]
