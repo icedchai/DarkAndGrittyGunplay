@@ -23,9 +23,13 @@ namespace DarkAndGrittyGunplay
             },
             {
                 "chest",
-                new BoneGoreSpecs(5, new List<SerializedSchematic>()
+                new BoneGoreSpecs(50, new List<SerializedSchematic>()
                 {
-                    new SerializedSchematic ("Heart", Vector3.zero, new Vector3(11.731f, 0f, 17.445f))
+                    new SerializedSchematic ("Heart", Vector3.zero),
+                    new SerializedSchematic ("Kidney", Vector3.zero),
+                    new SerializedSchematic ("Liver", Vector3.zero),
+                    new SerializedSchematic ("Bone", new Vector3(0.03f, 0.5f)),
+                    new SerializedSchematic ("Bone", new Vector3(0.03f, 0f)),
                 })
             },
             {
@@ -58,7 +62,7 @@ namespace DarkAndGrittyGunplay
             },
             {
                 "thigh.l",
-                new BoneGoreSpecs(5, new List<SerializedSchematic>()
+                new BoneGoreSpecs(10, new List<SerializedSchematic>()
                 {
                     new SerializedSchematic ("Bone", new Vector3(0.02f, -0.06f, 0.06f), new Vector3(-13, 3, -10))
                 })
@@ -72,7 +76,7 @@ namespace DarkAndGrittyGunplay
             },
             {
                 "thigh.r",
-                new BoneGoreSpecs(5, new List<SerializedSchematic>()
+                new BoneGoreSpecs(10, new List<SerializedSchematic>()
                 {
                     new SerializedSchematic ("Bone", new Vector3(0.02f, -0.5f, 0.03f), new Vector3(-3, 0, 8))
                 })
