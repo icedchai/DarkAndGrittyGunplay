@@ -1,4 +1,5 @@
-﻿using DarkAndGrittyGunplay.Configs;
+﻿using AdminToys;
+using DarkAndGrittyGunplay.Configs;
 using DarkAndGrittyGunplay.Features;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Events.Handlers;
@@ -15,6 +16,7 @@ using System.Numerics;
 using UnityEngine;
 using Utf8Json.Internal;
 using Logger = LabApi.Features.Console.Logger;
+using PrimitiveObjectToy = LabApi.Features.Wrappers.PrimitiveObjectToy;
 using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
@@ -28,6 +30,8 @@ namespace DarkAndGrittyGunplay.Events.Handlers
             PlayerEvents.ChangedRole += OnPlayerChangedRole;
             PlayerEvents.Death += OnPlayerDeath;
             PlayerEvents.SpawningRagdoll += OnPlayerSpawningRagdoll;
+
+            ServerEvents.RoundStarted += OnRoundStarted;
         }
 
         public void UnsubscribeEvents()
@@ -35,6 +39,8 @@ namespace DarkAndGrittyGunplay.Events.Handlers
             PlayerEvents.ChangedRole -= OnPlayerChangedRole;
             PlayerEvents.Death -= OnPlayerDeath;
             PlayerEvents.SpawningRagdoll -= OnPlayerSpawningRagdoll;
+
+            ServerEvents.RoundStarted -= OnRoundStarted;
         }
 
         Dictionary<string, Vector3> dict = new Dictionary<string, Vector3>()
@@ -55,6 +61,8 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
         private void OnRoundStarted()
         {
+            GameObject gameObject = new GameObject("gore_spawner");
+            GoreSpawner goreSpawner = gameObject.AddComponent<GoreSpawner>();
             gibs.Clear();
         }
 
@@ -78,7 +86,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                     }
                 });
             }*/
-            if (!e.OldRole.IsHuman())
+            if (!ShouldExplodeRole(e.NewRole.RoleTypeId))
             {
                 return;
             }
@@ -117,10 +125,39 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         Gib goreBit = gib.GameObject.AddComponent<Gib>();
                         goreBit.pair = pair;
                         spawnedGibs.Add(goreBit);
+                        goreBit.gameObject.AddComponent<SphereCollider>();
                     }
                     foreach (SerializedSchematic gib in goreSpecs.Gibs)
                     {
                         SchematicObject bit = ObjectSpawner.SpawnSchematic(gib.SchematicName, Vector3.zero);
+
+                        foreach (AdminToyBase adminToy in bit.AdminToyBases)
+                        {
+                            if (adminToy is AdminToys.PrimitiveObjectToy primToy)
+                            {
+                                if (primToy.PrimitiveFlags.HasFlag(PrimitiveFlags.Collidable))
+                                {
+                                    switch (primToy.PrimitiveType)
+                                    {
+                                        case PrimitiveType.Cube:
+                                            adminToy.gameObject.AddComponent<BoxCollider>();
+                                            break;
+                                        case PrimitiveType.Sphere:
+                                            adminToy.gameObject.AddComponent<SphereCollider>();
+                                            break;
+                                        case PrimitiveType.Capsule:
+                                            adminToy.gameObject.AddComponent<CapsuleCollider>();
+                                            break;
+                                        case PrimitiveType.Cylinder:
+                                            adminToy.gameObject.AddComponent<CapsuleCollider>();
+                                            break;
+                                    }
+
+                                    primToy.NetworkPrimitiveFlags ^= PrimitiveFlags.Collidable;
+                                }
+                            }
+                        }
+
                         Gib goreBit = bit.gameObject.AddComponent<Gib>();
                         goreBit.isSplatter = false;
                         goreBit.pair = pair;
@@ -134,7 +171,12 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
         private bool ShouldExplodePlayer(RoleTypeId role, DamageHandlerBase damageHandler)
         {
-            return (role.IsHuman() || role == RoleTypeId.Scp0492 || role == RoleTypeId.Scp049) && (damageHandler is ExplosionDamageHandler || damageHandler is Scp096DamageHandler || damageHandler is JailbirdDamageHandler);
+            return (ShouldExplodeRole(role)) && (damageHandler is ExplosionDamageHandler || damageHandler is UniversalDamageHandler || damageHandler is Scp096DamageHandler || damageHandler is JailbirdDamageHandler);
+        }
+
+        private bool ShouldExplodeRole(RoleTypeId role)
+        {
+            return (role.IsHuman() || role == RoleTypeId.Scp0492 || role == RoleTypeId.Scp049);
         }
 
         private void OnPlayerSpawningRagdoll(PlayerSpawningRagdollEventArgs e)
@@ -157,9 +199,14 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
             if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
             {
-                foreach(Gib gib in gibList)
+                gibList[0].e = e;
+                foreach (Gib gib in gibList)
                 {
-                    gib.Activate(e);
+                    Task.Run(() => 
+                        {
+                            gib.e = e;
+                            GoreSpawner.Singleton.gibQueue.Enqueue(gib);
+                        });
                 }
             }
             gibs.Remove(e.Player);

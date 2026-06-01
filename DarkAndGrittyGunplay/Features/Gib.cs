@@ -8,6 +8,7 @@ using InventorySystem.Items.Pickups;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features.Console;
 using LabApi.Features.Wrappers;
+using MEC;
 using ProjectMER.Features;
 using ProjectMER.Features.Objects;
 using RelativePositioning;
@@ -26,10 +27,11 @@ using Random = UnityEngine.Random;
 
 namespace DarkAndGrittyGunplay.Features
 {
-    internal class Gib : MonoBehaviour
+    public class Gib : MonoBehaviour
     {
         internal bool isSplatter = true;
         internal KeyValuePair<string, Vector3> pair;
+        internal PlayerDeathEventArgs e;
         internal SerializedSchematic schematicInfo;
 
         private void OnCollisionStay(Collision collision)
@@ -39,7 +41,12 @@ namespace DarkAndGrittyGunplay.Features
                 return;
             }
 
-            DecalRpcCache.SpawnDecal(collision.contacts[0].point, transform.position, DecalPoolType.Blood);
+            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, collision.contacts[0].normal);
+
+            for (int i = -1; i < 1; i++)
+            {
+                DecalRpcCache.SpawnDecal(collision.contacts[0].point + (i) * (targetRotation * Vector3.right), transform.position);
+            }
 
             //DecalRpcCache.PlaceBlood(collision.contacts[0].point, targetRotation.eulerAngles);
 
@@ -69,24 +76,18 @@ namespace DarkAndGrittyGunplay.Features
             Destroy(gameObject);
         }
 
-        internal void Activate(PlayerDeathEventArgs e)
+        public void Activate()
         {
             if (isSplatter)
             {
                 PrimitiveObjectToy gib = PrimitiveObjectToy.Get(GetComponent<AdminToys.PrimitiveObjectToy>());
                 gib.Position = e.OldPosition + pair.Value + new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f));
-                gib.Scale = new Vector3(0.1f, 0.1f, 0.1f);
-                gib.Type = PrimitiveType.Cube;
-                gib.Color = Color.red;
-                gib.Flags = AdminToys.PrimitiveFlags.Visible;
-                gib.MovementSmoothing = 60;
-                gib.Spawn();
+                
                 /*
                 TextToy text = TextToy.Create(gib.Transform, false);
                 text.TextFormat = pair.Key;
                 text.Transform.localPosition = new (1, 1, 1);
                 text.Spawn();*/
-                var sphereCollider = gameObject.AddComponent<SphereCollider>();
 
             }
             else
@@ -96,9 +97,29 @@ namespace DarkAndGrittyGunplay.Features
             }
 
             var rb = gameObject.AddComponent<Rigidbody>();
-            rb.AddForce((pair.Value + new Vector3(0, 0.25f, 0)) * 1000 + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), Random.Range(-1f, 1f)) * 700));
+            rb.AddForce((pair.Value + new Vector3(0, 0.25f, 0)) * 1000 + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
+            Timing.CallDelayed(Plugin.Singleton.Config.GibPhysicsLifetime, () =>
+            {
+                if (gameObject != null)
+                {
+                    Destroy(rb);
+
+                    foreach(Collider collider in GetComponentsInChildren<Collider>())
+                    {
+                        Destroy(collider);
+                    }
+                }
+            });
+
+            Timing.CallDelayed(Plugin.Singleton.Config.GibLifetime, () =>
+            {
+                if (gameObject != null)
+                {
+                    Destroy(gameObject);
+                }
+            });
 
             gameObject.layer = 1 << 25;
         }
