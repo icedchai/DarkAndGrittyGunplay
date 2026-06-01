@@ -40,6 +40,7 @@ namespace DarkAndGrittyGunplay.Features
             }
 
             DecalRpcCache.SpawnDecal(collision.contacts[0].point, transform.position, DecalPoolType.Blood);
+
             //DecalRpcCache.PlaceBlood(collision.contacts[0].point, targetRotation.eulerAngles);
 
             /*PrimitiveObjectToy splat = PrimitiveObjectToy.Create(null, false);
@@ -85,24 +86,21 @@ namespace DarkAndGrittyGunplay.Features
                 text.TextFormat = pair.Key;
                 text.Transform.localPosition = new (1, 1, 1);
                 text.Spawn();*/
-                var rb = gib.GameObject.AddComponent<Rigidbody>();
-                rb.AddForce(pair.Value * 1000 + new Vector3(Random.Range(-700f, 700f), Random.Range(-700f, 700f), Random.Range(-700f, 700f)));
-                rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                var sphereCollider = gameObject.AddComponent<SphereCollider>();
 
-
-                var sphereCollider = gib.GameObject.AddComponent<SphereCollider>();
-                sphereCollider.gameObject.layer = 1 << 25;
             }
             else
             {
                 transform.position = e.OldPosition + pair.Value + schematicInfo.PositionOffset;
                 transform.rotation = Quaternion.Euler(schematicInfo.RotationOffset);
-
-                var rb = gameObject.AddComponent<Rigidbody>();
-                rb.AddForce(pair.Value * 1000 + new Vector3(Random.Range(-700f, 700f), Random.Range(-700f, 700f), Random.Range(-700f, 700f)));
-                rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-                gameObject.layer = 1 << 25;
             }
+
+            var rb = gameObject.AddComponent<Rigidbody>();
+            rb.AddForce((pair.Value + new Vector3(0, 0.25f, 0)) * 1000 + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), Random.Range(-1f, 1f)) * 700));
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+
+            gameObject.layer = 1 << 25;
         }
     }
 }
