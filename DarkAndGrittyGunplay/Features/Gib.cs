@@ -29,24 +29,25 @@ namespace DarkAndGrittyGunplay.Features
 {
     public class Gib : MonoBehaviour
     {
-        internal bool isSplatter = true;
+        internal bool despawnWhenBlood = true;
+        internal bool spawnBloodDecals = true;
         internal KeyValuePair<string, Vector3> pair;
         internal PlayerDeathEventArgs e;
         internal SerializedSchematic schematicInfo;
 
-        private void OnCollisionStay(Collision collision)
+        internal int id = 0;
+
+        private void OnCollisionEnter(Collision collision)
         {
-            if (!isSplatter || collision.gameObject.TryGetComponent<Gib>(out _) || collision.gameObject.TryGetComponent<ItemPickupBase>(out _) || collision.gameObject.TryGetComponent<DoorVariant>(out _) || collision.gameObject.TryGetComponent<ReferenceHub>(out _))
+            if (!spawnBloodDecals || collision.gameObject.TryGetComponent<Gib>(out _) || collision.gameObject.TryGetComponent<ItemPickupBase>(out _) || collision.gameObject.TryGetComponent<DoorVariant>(out _) || collision.gameObject.TryGetComponent<ReferenceHub>(out _))
             {
                 return;
             }
 
-            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, collision.contacts[0].normal);
+            //Quaternion targetRotation = Quaternion.FromToRotation(transform.up, collision.contacts[0].normal);
 
-            for (int i = -1; i < 1; i++)
-            {
-                DecalRpcCache.SpawnDecal(collision.contacts[0].point + (i) * (targetRotation * Vector3.right), transform.position);
-            }
+
+            DecalRpcCache.SpawnDecal(collision.contacts[0].point, transform.position);
 
             //DecalRpcCache.PlaceBlood(collision.contacts[0].point, targetRotation.eulerAngles);
 
@@ -67,8 +68,10 @@ namespace DarkAndGrittyGunplay.Features
             splat.Flags = AdminToys.PrimitiveFlags.Visible;
             splat.Position = collision.contacts[0].point;
             splat.Spawn();*/
-
-            Destroy(gameObject);
+            if (despawnWhenBlood)
+            {
+                Remove();
+            }
         }
 
         internal void Remove()
@@ -76,9 +79,14 @@ namespace DarkAndGrittyGunplay.Features
             Destroy(gameObject);
         }
 
+        public void Dismiss(float min, float max)
+        {
+            Timing.CallDelayed(Random.Range(min, max), () => Remove());
+        }
+
         public void Activate()
         {
-            if (isSplatter)
+            if (despawnWhenBlood)
             {
                 PrimitiveObjectToy gib = PrimitiveObjectToy.Get(GetComponent<AdminToys.PrimitiveObjectToy>());
                 gib.Position = e.OldPosition + pair.Value + new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f));
@@ -100,28 +108,31 @@ namespace DarkAndGrittyGunplay.Features
             rb.AddForce((pair.Value + new Vector3(0, 0.25f, 0)) * 1000 + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
-            Timing.CallDelayed(Plugin.Singleton.Config.GibPhysicsLifetime + Random.Range(0f, Plugin.Singleton.Config.GibPhysicsLifetimeVariance), () =>
+            if (!despawnWhenBlood)
             {
-                if (gameObject != null)
+                Timing.CallDelayed(Plugin.Singleton.Config.GibPhysicsLifetime + Random.Range(0f, Plugin.Singleton.Config.GibPhysicsLifetimeVariance), () =>
                 {
-                    Destroy(rb);
-
-                    foreach(Collider collider in GetComponentsInChildren<Collider>())
+                    if (gameObject)
                     {
-                        Destroy(collider);
+                        Destroy(rb);
+
+                        foreach (Collider collider in GetComponentsInChildren<Collider>())
+                        {
+                            Destroy(collider);
+                        }
                     }
-                }
-            });
+                });
 
-            Timing.CallDelayed(Plugin.Singleton.Config.GibLifetime + Random.Range(0f, Plugin.Singleton.Config.GibLifetimeVariance), () =>
-            {
-                if (gameObject != null)
+                Timing.CallDelayed(Plugin.Singleton.Config.GibLifetime + Random.Range(0f, Plugin.Singleton.Config.GibLifetimeVariance), () =>
                 {
-                    Destroy(gameObject);
-                }
-            });
+                    if (gameObject)
+                    {
+                        Remove();
+                    }
+                });
+            }
 
-            gameObject.layer = 1 << 25;
+            gameObject.layer = 9;
         }
     }
 }
