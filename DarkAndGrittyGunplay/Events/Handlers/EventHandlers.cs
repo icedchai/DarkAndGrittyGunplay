@@ -105,12 +105,16 @@ namespace DarkAndGrittyGunplay.Events.Handlers
             List<Gib> spawnedGibs = new List<Gib>();
 
             Config config = Plugin.Singleton.Config;
+
+
+            int bloodParticles = 0;
             foreach (var pair in dict)
             {
                 if (config.GoreSettings.TryGetValue(pair.Key.ToLower(), out var goreSpecs))
                 {
                     for (int i = 0; i < goreSpecs.GoreBits; i++)
                     {
+                        bloodParticles++;
                         PrimitiveObjectToy gib = PrimitiveObjectToy.Create(Vector3.zero, null, false);
                         gib.Scale = new Vector3(0.1f, 0.1f, 0.1f);
                         gib.Type = PrimitiveType.Cube;
@@ -118,6 +122,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         gib.Flags = AdminToys.PrimitiveFlags.Visible;
                         gib.MovementSmoothing = 60;
                         gib.SyncInterval = 0f;
+                        gib.GameObject.layer = 9;
                         gib.Spawn();
                         /*
                         TextToy text = TextToy.Create(gib.Transform, false);
@@ -126,6 +131,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         text.Spawn();*/
                         Gib goreBit = gib.GameObject.AddComponent<Gib>();
                         goreBit.pair = pair;
+                        goreBit.id = bloodParticles;
                         spawnedGibs.Add(goreBit);
                         goreBit.gameObject.AddComponent<SphereCollider>();
                     }
@@ -163,12 +169,15 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
                                     primToy.NetworkPrimitiveFlags ^= PrimitiveFlags.Collidable;
                                     primToy.syncInterval = 0f;
+
+                                    primToy.gameObject.layer = 9;
                                 }
                             }
                         }
 
                         Gib goreBit = bit.gameObject.AddComponent<Gib>();
-                        goreBit.isSplatter = false;
+                        goreBit.despawnWhenBlood = false;
+                        goreBit.spawnBloodDecals = false;
                         goreBit.pair = pair;
                         goreBit.schematicInfo = gib;
                         spawnedGibs.Add(goreBit);
@@ -180,7 +189,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
         private bool ShouldExplodePlayer(RoleTypeId role, DamageHandlerBase damageHandler)
         {
-            return (ShouldExplodeRole(role)) && (damageHandler is ExplosionDamageHandler || damageHandler is UniversalDamageHandler || damageHandler is Scp096DamageHandler || damageHandler is JailbirdDamageHandler);
+            return (ShouldExplodeRole(role)) && (damageHandler is ExplosionDamageHandler || damageHandler is Scp096DamageHandler || damageHandler is JailbirdDamageHandler);
         }
 
         private bool ShouldExplodeRole(RoleTypeId role)
@@ -205,6 +214,8 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                 return;
             }
             Config config = Plugin.Singleton.Config;
+
+            GoreSpawner.Singleton.ValidDeadPeople++;
 
             if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
             {
@@ -254,7 +265,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         SchematicObject bit = ObjectSpawner.SpawnSchematic(gib.SchematicName, e.OldPosition + pair.Value + gib.PositionOffset);
                         bit.Rotation = Quaternion.Euler(gib.RotationOffset);
                         Gib goreBit = bit.gameObject.AddComponent<Gib>();
-                        goreBit.isSplatter = false;
+                        goreBit.despawnWhenBlood = false;
                         var rb = bit.gameObject.AddComponent<Rigidbody>();
                         rb.AddForce(pair.Value * 1000 + new Vector3(Random.Range(-700f, 700f), Random.Range(-700f, 700f), Random.Range(-700f, 700f)));
                         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
