@@ -219,7 +219,6 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
             if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
             {
-                gibList[0].e = e;
                 foreach (Gib gib in gibList)
                 {
                     Task.Run(() => 
