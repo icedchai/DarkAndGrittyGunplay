@@ -1,139 +1,120 @@
-﻿using AdminToys;
-using DarkAndGrittyGunplay.Configs;
-using Decals;
+﻿using DarkAndGrittyGunplay.Configs;
 using Interactables.Interobjects.DoorUtils;
-using InventorySystem.Items.Autosync;
-using InventorySystem.Items.Firearms.Modules;
 using InventorySystem.Items.Pickups;
 using LabApi.Events.Arguments.PlayerEvents;
-using LabApi.Features.Console;
-using LabApi.Features.Wrappers;
 using MEC;
-using ProjectMER.Features;
-using ProjectMER.Features.Objects;
-using RelativePositioning;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-using Utf8Json.Internal;
-using Logger = LabApi.Features.Console.Logger;
 using PrimitiveObjectToy = LabApi.Features.Wrappers.PrimitiveObjectToy;
 using Random = UnityEngine.Random;
 
-namespace DarkAndGrittyGunplay.Features
+namespace DarkAndGrittyGunplay.Features;
+
+public class Gib : MonoBehaviour
 {
-    public class Gib : MonoBehaviour
+    internal bool despawnOnCollision = true;
+    internal bool isBloodBit = true;
+    internal bool spawnBloodDecals = true;
+    internal KeyValuePair<string, Vector3> boneAndOffset;
+    internal PlayerDeathEventArgs deathInfo;
+    internal SerializedSchematic schematicInfo;
+
+    internal int id = 0;
+
+    private void OnCollisionEnter(Collision collision)
     {
-        internal bool despawnOnCollision = true;
-        internal bool isBloodBit = true;
-        internal bool spawnBloodDecals = true;
-        internal KeyValuePair<string, Vector3> boneAndOffset;
-        internal PlayerDeathEventArgs deathInfo;
-        internal SerializedSchematic schematicInfo;
-
-        internal int id = 0;
-
-        private void OnCollisionEnter(Collision collision)
+        if (!spawnBloodDecals || collision.gameObject.TryGetComponent<Gib>(out _) || collision.gameObject.TryGetComponent<ItemPickupBase>(out _) || collision.gameObject.TryGetComponent<DoorVariant>(out _) || collision.gameObject.TryGetComponent<ReferenceHub>(out _))
         {
-            if (!spawnBloodDecals || collision.gameObject.TryGetComponent<Gib>(out _) || collision.gameObject.TryGetComponent<ItemPickupBase>(out _) || collision.gameObject.TryGetComponent<DoorVariant>(out _) || collision.gameObject.TryGetComponent<ReferenceHub>(out _))
-            {
-                return;
-            }
-
-            //Quaternion targetRotation = Quaternion.FromToRotation(transform.up, collision.contacts[0].normal);
-
-
-            DecalRpcCache.SpawnDecal(collision.contacts[0].point, transform.position);
-
-            //DecalRpcCache.PlaceBlood(collision.contacts[0].point, targetRotation.eulerAngles);
-
-            /*PrimitiveObjectToy splat = PrimitiveObjectToy.Create(null, false);
-            splat.Type = PrimitiveType.Cylinder;
-            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, collision.contacts[0].normal) * transform.rotation;
-            splat.Rotation = targetRotation;
-
-            float diagonality = 1f - (float)Math.Sqrt(Math.Pow(targetRotation.eulerAngles.x % 90, 2) + Math.Pow(targetRotation.eulerAngles.y % 90, 2) + Math.Pow(targetRotation.eulerAngles.z % 90, 2)) / 45f;
-
-            splat.Scale = new Vector3(GetComponent<Rigidbody>().linearVelocity.magnitude * diagonality / 5, 0.005f, GetComponent<Rigidbody>().linearVelocity.magnitude * diagonality / 5);
-            if (collision.collider.TryGetComponent<AdminToyBase>(out _))
-            {
-                splat.Transform.parent = collision.gameObject.transform;
-            }
-
-            splat.Color = Color.red;
-            splat.Flags = AdminToys.PrimitiveFlags.Visible;
-            splat.Position = collision.contacts[0].point;
-            splat.Spawn();*/
-            if (despawnOnCollision)
-            {
-                Remove();
-            }
+            return;
         }
 
-        internal void Remove()
+        //Quaternion targetRotation = Quaternion.FromToRotation(transform.up, collision.contacts[0].normal);
+
+
+        DecalRpcCache.SpawnDecal(collision.contacts[0].point, transform.position);
+
+        //DecalRpcCache.PlaceBlood(collision.contacts[0].point, targetRotation.eulerAngles);
+
+        /*PrimitiveObjectToy splat = PrimitiveObjectToy.Create(null, false);
+        splat.Type = PrimitiveType.Cylinder;
+        Quaternion targetRotation = Quaternion.FromToRotation(transform.up, collision.contacts[0].normal) * transform.rotation;
+        splat.Rotation = targetRotation;
+
+        float diagonality = 1f - (float)Math.Sqrt(Math.Pow(targetRotation.eulerAngles.x % 90, 2) + Math.Pow(targetRotation.eulerAngles.y % 90, 2) + Math.Pow(targetRotation.eulerAngles.z % 90, 2)) / 45f;
+
+        splat.Scale = new Vector3(GetComponent<Rigidbody>().linearVelocity.magnitude * diagonality / 5, 0.005f, GetComponent<Rigidbody>().linearVelocity.magnitude * diagonality / 5);
+        if (collision.collider.TryGetComponent<AdminToyBase>(out _))
         {
-            Destroy(gameObject);
+            splat.Transform.parent = collision.gameObject.transform;
         }
 
-        public void Dismiss(float min, float max)
+        splat.Color = Color.red;
+        splat.Flags = AdminToys.PrimitiveFlags.Visible;
+        splat.Position = collision.contacts[0].point;
+        splat.Spawn();*/
+        if (despawnOnCollision)
         {
-            Timing.CallDelayed(Random.Range(min, max), () => Remove());
+            Remove();
+        }
+    }
+
+    internal void Remove()
+    {
+        Destroy(gameObject);
+    }
+
+    public void Dismiss(float min, float max)
+    {
+        Timing.CallDelayed(Random.Range(min, max), () => Remove());
+    }
+
+    public void Activate()
+    {
+        if (despawnOnCollision)
+        {
+            PrimitiveObjectToy gib = PrimitiveObjectToy.Get(GetComponent<AdminToys.PrimitiveObjectToy>());
+            gib.Position = deathInfo.OldPosition + boneAndOffset.Value + new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f));
+
+            /*
+            TextToy text = TextToy.Create(gib.Transform, false);
+            text.TextFormat = pair.Key;
+            text.Transform.localPosition = new (1, 1, 1);
+            text.Spawn();*/
+
+        }
+        else
+        {
+            transform.position = deathInfo.OldPosition + boneAndOffset.Value + schematicInfo.PositionOffset;
+            transform.rotation = Quaternion.Euler(schematicInfo.RotationOffset);
         }
 
-        public void Activate()
+        var rb = gameObject.AddComponent<Rigidbody>();
+        rb.AddForce(((boneAndOffset.Value + new Vector3(0, 0.25f, 0)) * 1000) + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+        if (!despawnOnCollision)
         {
-            if (despawnOnCollision)
+            Timing.CallDelayed(Plugin.Singleton.Config.GibPhysicsLifetime + Random.Range(0f, Plugin.Singleton.Config.GibPhysicsLifetimeVariance), () =>
             {
-                PrimitiveObjectToy gib = PrimitiveObjectToy.Get(GetComponent<AdminToys.PrimitiveObjectToy>());
-                gib.Position = deathInfo.OldPosition + boneAndOffset.Value + new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f));
-
-                /*
-                TextToy text = TextToy.Create(gib.Transform, false);
-                text.TextFormat = pair.Key;
-                text.Transform.localPosition = new (1, 1, 1);
-                text.Spawn();*/
-
-            }
-            else
-            {
-                transform.position = deathInfo.OldPosition + boneAndOffset.Value + schematicInfo.PositionOffset;
-                transform.rotation = Quaternion.Euler(schematicInfo.RotationOffset);
-            }
-
-            var rb = gameObject.AddComponent<Rigidbody>();
-            rb.AddForce(((boneAndOffset.Value + new Vector3(0, 0.25f, 0)) * 1000) + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
-            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-
-            if (!despawnOnCollision)
-            {
-                Timing.CallDelayed(Plugin.Singleton.Config.GibPhysicsLifetime + Random.Range(0f, Plugin.Singleton.Config.GibPhysicsLifetimeVariance), () =>
+                if (gameObject)
                 {
-                    if (gameObject)
+                    Destroy(rb);
+
+                    foreach (Collider collider in GetComponentsInChildren<Collider>())
                     {
-                        Destroy(rb);
-
-                        foreach (Collider collider in GetComponentsInChildren<Collider>())
-                        {
-                            Destroy(collider);
-                        }
+                        Destroy(collider);
                     }
-                });
+                }
+            });
 
-                Timing.CallDelayed(Plugin.Singleton.Config.GibLifetime + Random.Range(0f, Plugin.Singleton.Config.GibLifetimeVariance), () =>
+            Timing.CallDelayed(Plugin.Singleton.Config.GibLifetime + Random.Range(0f, Plugin.Singleton.Config.GibLifetimeVariance), () =>
+            {
+                if (gameObject)
                 {
-                    if (gameObject)
-                    {
-                        Remove();
-                    }
-                });
-            }
-
-            gameObject.layer = 9;
+                    Remove();
+                }
+            });
         }
+
+        gameObject.layer = 9;
     }
 }

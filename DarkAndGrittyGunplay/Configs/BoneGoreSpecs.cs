@@ -1,26 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using UnityEngine;
 
-namespace DarkAndGrittyGunplay.Configs
+namespace DarkAndGrittyGunplay.Configs;
+
+public class BoneGoreSpecs
 {
-    public class BoneGoreSpecs
+    public BoneGoreSpecs() {}
+
+    public BoneGoreSpecs(int goreBits, List<SerializedSchematic> gibs)
     {
-        public BoneGoreSpecs() {}
-
-        public BoneGoreSpecs(int goreBits, List<SerializedSchematic> gibs)
-        {
-            GoreBits = goreBits;
-            Gibs = gibs;
-        }
-
-        [Description("How many blood particles to spawn form this bone")]
-        public int GoreBits { get; set; } = 5;
-
-        public List<SerializedSchematic> Gibs { get; set; } = new List<SerializedSchematic>() { new SerializedSchematic("Bone", Vector3.zero, Vector3.zero)};
+        GoreBits = goreBits;
+        Gibs = gibs;
     }
+
+    [Description("How many blood particles to spawn form this bone")]
+    public int GoreBits { get; set; } = 5;
+
+    public List<SerializedSchematic> Gibs { get; set; } = new List<SerializedSchematic>() { new SerializedSchematic("Bone", Vector3.zero, Vector3.zero)};
 }

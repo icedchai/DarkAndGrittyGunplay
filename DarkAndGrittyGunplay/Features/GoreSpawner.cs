@@ -1,55 +1,46 @@
-﻿using Mirror;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using LabApi.Features.Console;
-using Logger = LabApi.Features.Console.Logger;
+﻿using UnityEngine;
 
-namespace DarkAndGrittyGunplay.Features
+namespace DarkAndGrittyGunplay.Features;
+
+public class GoreSpawner : MonoBehaviour
 {
-    public class GoreSpawner : MonoBehaviour
+    public static GoreSpawner Singleton { get; internal set; }
+
+    public Queue<Gib> gibQueue { get; private set; }
+
+    /// <summary>
+    /// Gets the number of players who have died last frame in a way that will lead to them gibbing.
+    /// </summary>
+    public int CurrentExplosionDeaths { get; internal set; } = 0;
+
+    private void Start()
     {
-        public static GoreSpawner Singleton { get; internal set; }
+        Singleton = this;
+        gibQueue = new Queue<Gib>();
+    }
 
-        public Queue<Gib> gibQueue { get; private set; }
-
-        /// <summary>
-        /// Gets the number of players who have died last frame in a way that will lead to them gibbing.
-        /// </summary>
-        public int CurrentExplosionDeaths { get; internal set; } = 0;
-
-        private void Start()
+    private void Update()
+    {
+        if (CurrentExplosionDeaths != 0)
         {
-            Singleton = this;
-            gibQueue = new Queue<Gib>();
+            CurrentExplosionDeaths = 0;
         }
 
-        private void Update()
+        if (!gibQueue.IsEmpty())
         {
-            if (CurrentExplosionDeaths != 0)
+            for (int i = 0; i < Plugin.Singleton.Config.MaxGibsActivatedPerTick; i++)
             {
-                CurrentExplosionDeaths = 0;
-            }
-
-            if (!gibQueue.IsEmpty())
-            {
-                for (int i = 0; i < Plugin.Singleton.Config.MaxGibsActivatedPerTick; i++)
+                if (!gibQueue.TryDequeue(out Gib? gib))
                 {
-                    if (!gibQueue.TryDequeue(out Gib? gib))
-                    {
-                        return;
-                    }
-
-                    if (gib == null)
-                    {
-                        continue;
-                    }
-
-                    gib.Activate();
+                    return;
                 }
+
+                if (gib == null)
+                {
+                    continue;
+                }
+
+                gib.Activate();
             }
         }
     }
