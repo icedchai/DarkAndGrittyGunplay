@@ -215,20 +215,36 @@ namespace DarkAndGrittyGunplay.Events.Handlers
             }
             Config config = Plugin.Singleton.Config;
 
+            int id = GoreSpawner.Singleton.ValidDeadPeople;
             GoreSpawner.Singleton.ValidDeadPeople++;
-
-            if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
+            bool dontSpawnBloodbits = false;
+            Timing.CallDelayed(0, () =>
             {
-                foreach (Gib gib in gibList)
+                if (GoreSpawner.Singleton.ValidDeadPeople > 3)
                 {
-                    Task.Run(() => 
+                    if (id > 3)
+                    {
+                        dontSpawnBloodbits = true;
+                    }
+                }
+                if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
+                {
+                    foreach (Gib gib in gibList)
+                    {
+                        if (dontSpawnBloodbits && gib.isBloodBit)
+                        {
+                            gib.Dismiss(2, 10);
+                            return;
+                        }
+                        Task.Run(() =>
                         {
                             gib.e = e;
                             GoreSpawner.Singleton.gibQueue.Enqueue(gib);
                         });
+                    }
                 }
-            }
-            gibs.Remove(e.Player);
+                gibs.Remove(e.Player);
+            });
 
             return;
 
