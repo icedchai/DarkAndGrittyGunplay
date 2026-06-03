@@ -1,5 +1,4 @@
-﻿
-using DarkAndGrittyGunplay.Events.Handlers;
+﻿using DarkAndGrittyGunplay.Events.Handlers;
 using LabApi.Features;
 using LabApi.Loader.Features.Plugins;
 

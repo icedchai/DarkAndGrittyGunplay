@@ -9,7 +9,7 @@ namespace DarkAndGrittyGunplay.Configs
 {
     public class SerializedSchematic
     {
-        public string SchematicName { get; set; } = "";
+        public string SchematicName { get; set; } = string.Empty;
 
         public Vector3 PositionOffset { get; set; }
 
@@ -23,6 +23,7 @@ namespace DarkAndGrittyGunplay.Configs
             PositionOffset = positionOffset;
             RotationOffset = rotationOffset;
         }
+
         public SerializedSchematic(string schematicName, Vector3 positionOffset)
         {
             SchematicName = schematicName;

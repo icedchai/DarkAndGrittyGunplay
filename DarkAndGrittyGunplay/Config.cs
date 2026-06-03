@@ -11,8 +11,11 @@ namespace DarkAndGrittyGunplay
 {
     public class Config
     {
+        [Description("How many people die simultaneously before blood bits are disallowed from spawning")]
+        public int StopSpawningBloodBitsThreshold { get; set; } = 4;
+
         [Description("How many gibs can be activated per tick. The lower this value is, the easier on the server, but gibs will be noticeably delayed if there are a lot of exploding people.")]
-        public int MaxGibsActivatedPerTick { get; set; } = 250;
+        public int MaxGibsActivatedPerTick { get; set; } = 75;
 
         [Description("How long in seconds before a gib has its physics disabled")]
         public float GibPhysicsLifetime { get; set; } = 30;

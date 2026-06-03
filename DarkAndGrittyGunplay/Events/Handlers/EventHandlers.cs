@@ -8,6 +8,7 @@ using LabApi.Features.Wrappers;
 using MEC;
 using PlayerRoles;
 using PlayerRoles.FirstPersonControl;
+using PlayerRoles.PlayableScps.Scp939;
 using PlayerStatsSystem;
 using ProjectMER.Features;
 using ProjectMER.Features.Objects;
@@ -69,8 +70,6 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
         private void OnPlayerChangedRole(PlayerChangedRoleEventArgs e)
         {
-
-
             /* // generate dictionary for each bone & its position
             if (e.NewRole is IFpcRole fpcRole)
             {
@@ -94,18 +93,17 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
             if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
             {
-                foreach(Gib gib in gibList)
+                foreach (Gib gib in gibList)
                 {
                     gib.Remove();
                 }
             }
-            gibs.Remove(e.Player);
 
+            gibs.Remove(e.Player);
 
             List<Gib> spawnedGibs = new List<Gib>();
 
             Config config = Plugin.Singleton.Config;
-
 
             int bloodParticles = 0;
             foreach (var pair in dict)
@@ -190,12 +188,17 @@ namespace DarkAndGrittyGunplay.Events.Handlers
 
         private bool ShouldExplodePlayer(RoleTypeId role, DamageHandlerBase damageHandler)
         {
-            return (ShouldExplodeRole(role)) && (damageHandler is ExplosionDamageHandler || damageHandler is Scp096DamageHandler || damageHandler is JailbirdDamageHandler);
+            return ShouldExplodeRole(role) && ShouldExplodeDamageHandler(damageHandler);
+        }
+
+        private bool ShouldExplodeDamageHandler(DamageHandlerBase damageHandler)
+        {
+            return damageHandler is ExplosionDamageHandler || damageHandler is Scp096DamageHandler || (damageHandler is Scp939DamageHandler dh939 && dh939.Scp939DamageType == Scp939DamageType.LungeTarget) || damageHandler is JailbirdDamageHandler;
         }
 
         private bool ShouldExplodeRole(RoleTypeId role)
         {
-            return (role.IsHuman() || role == RoleTypeId.Scp0492 || role == RoleTypeId.Scp049);
+            return role.IsHuman() || role == RoleTypeId.Scp0492 || role == RoleTypeId.Scp049;
         }
 
         private void OnPlayerSpawningRagdoll(PlayerSpawningRagdollEventArgs e)
@@ -214,20 +217,19 @@ namespace DarkAndGrittyGunplay.Events.Handlers
             {
                 return;
             }
+
             Config config = Plugin.Singleton.Config;
 
-            int id = GoreSpawner.Singleton.ValidDeadPeople;
-            GoreSpawner.Singleton.ValidDeadPeople++;
+            int id = GoreSpawner.Singleton.CurrentExplosionDeaths;
+            GoreSpawner.Singleton.CurrentExplosionDeaths++;
             bool dontSpawnBloodbits = false;
             Timing.CallDelayed(0, () =>
             {
-                if (GoreSpawner.Singleton.ValidDeadPeople > 3)
+                if (id > Plugin.Singleton.Config.StopSpawningBloodBitsThreshold)
                 {
-                    if (id > 3)
-                    {
-                        dontSpawnBloodbits = true;
-                    }
+                    dontSpawnBloodbits = true;
                 }
+
                 if (gibs.TryGetValue(e.Player, out List<Gib> gibList))
                 {
                     foreach (Gib gib in gibList)
@@ -237,6 +239,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                             gib.Dismiss(2, 10);
                             return;
                         }
+
                         Task.Run(() =>
                         {
                             gib.deathInfo = e;
@@ -244,6 +247,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         });
                     }
                 }
+
                 gibs.Remove(e.Player);
             });
 

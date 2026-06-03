@@ -91,7 +91,7 @@ namespace DarkAndGrittyGunplay.Features
             {
                 PrimitiveObjectToy gib = PrimitiveObjectToy.Get(GetComponent<AdminToys.PrimitiveObjectToy>());
                 gib.Position = deathInfo.OldPosition + boneAndOffset.Value + new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f));
-                
+
                 /*
                 TextToy text = TextToy.Create(gib.Transform, false);
                 text.TextFormat = pair.Key;
@@ -106,7 +106,7 @@ namespace DarkAndGrittyGunplay.Features
             }
 
             var rb = gameObject.AddComponent<Rigidbody>();
-            rb.AddForce((boneAndOffset.Value + new Vector3(0, 0.25f, 0)) * 1000 + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
+            rb.AddForce(((boneAndOffset.Value + new Vector3(0, 0.25f, 0)) * 1000) + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
             if (!despawnOnCollision)

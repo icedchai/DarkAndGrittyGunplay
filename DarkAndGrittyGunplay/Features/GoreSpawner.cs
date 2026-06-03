@@ -16,8 +16,10 @@ namespace DarkAndGrittyGunplay.Features
 
         public Queue<Gib> gibQueue { get; private set; }
 
-        public int ValidDeadPeople { get; internal set; } = 0;
-
+        /// <summary>
+        /// Gets the number of players who have died last frame in a way that will lead to them gibbing.
+        /// </summary>
+        public int CurrentExplosionDeaths { get; internal set; } = 0;
 
         private void Start()
         {
@@ -27,10 +29,11 @@ namespace DarkAndGrittyGunplay.Features
 
         private void Update()
         {
-            if (ValidDeadPeople != 0)
+            if (CurrentExplosionDeaths != 0)
             {
-                ValidDeadPeople = 0;
+                CurrentExplosionDeaths = 0;
             }
+
             if (!gibQueue.IsEmpty())
             {
                 for (int i = 0; i < Plugin.Singleton.Config.MaxGibsActivatedPerTick; i++)
