@@ -130,7 +130,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         text.Transform.localPosition = new (1, 1, 1);
                         text.Spawn();*/
                         Gib goreBit = gib.GameObject.AddComponent<Gib>();
-                        goreBit.pair = pair;
+                        goreBit.boneAndOffset = pair;
                         goreBit.id = bloodParticles;
                         spawnedGibs.Add(goreBit);
                         goreBit.gameObject.AddComponent<SphereCollider>();
@@ -176,9 +176,10 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         }
 
                         Gib goreBit = bit.gameObject.AddComponent<Gib>();
-                        goreBit.despawnWhenBlood = false;
+                        goreBit.despawnOnCollision = false;
                         goreBit.spawnBloodDecals = false;
-                        goreBit.pair = pair;
+                        goreBit.isBloodBit = false;
+                        goreBit.boneAndOffset = pair;
                         goreBit.schematicInfo = gib;
                         spawnedGibs.Add(goreBit);
                     }
@@ -238,7 +239,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         }
                         Task.Run(() =>
                         {
-                            gib.e = e;
+                            gib.deathInfo = e;
                             GoreSpawner.Singleton.gibQueue.Enqueue(gib);
                         });
                     }
@@ -280,7 +281,7 @@ namespace DarkAndGrittyGunplay.Events.Handlers
                         SchematicObject bit = ObjectSpawner.SpawnSchematic(gib.SchematicName, e.OldPosition + pair.Value + gib.PositionOffset);
                         bit.Rotation = Quaternion.Euler(gib.RotationOffset);
                         Gib goreBit = bit.gameObject.AddComponent<Gib>();
-                        goreBit.despawnWhenBlood = false;
+                        goreBit.despawnOnCollision = false;
                         var rb = bit.gameObject.AddComponent<Rigidbody>();
                         rb.AddForce(pair.Value * 1000 + new Vector3(Random.Range(-700f, 700f), Random.Range(-700f, 700f), Random.Range(-700f, 700f)));
                         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;

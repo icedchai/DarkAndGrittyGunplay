@@ -29,10 +29,11 @@ namespace DarkAndGrittyGunplay.Features
 {
     public class Gib : MonoBehaviour
     {
-        internal bool despawnWhenBlood = true;
+        internal bool despawnOnCollision = true;
+        internal bool isBloodBit = true;
         internal bool spawnBloodDecals = true;
-        internal KeyValuePair<string, Vector3> pair;
-        internal PlayerDeathEventArgs e;
+        internal KeyValuePair<string, Vector3> boneAndOffset;
+        internal PlayerDeathEventArgs deathInfo;
         internal SerializedSchematic schematicInfo;
 
         internal int id = 0;
@@ -68,7 +69,7 @@ namespace DarkAndGrittyGunplay.Features
             splat.Flags = AdminToys.PrimitiveFlags.Visible;
             splat.Position = collision.contacts[0].point;
             splat.Spawn();*/
-            if (despawnWhenBlood)
+            if (despawnOnCollision)
             {
                 Remove();
             }
@@ -86,10 +87,10 @@ namespace DarkAndGrittyGunplay.Features
 
         public void Activate()
         {
-            if (despawnWhenBlood)
+            if (despawnOnCollision)
             {
                 PrimitiveObjectToy gib = PrimitiveObjectToy.Get(GetComponent<AdminToys.PrimitiveObjectToy>());
-                gib.Position = e.OldPosition + pair.Value + new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f));
+                gib.Position = deathInfo.OldPosition + boneAndOffset.Value + new Vector3(Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f), Random.Range(-0.1f, 0.1f));
                 
                 /*
                 TextToy text = TextToy.Create(gib.Transform, false);
@@ -100,15 +101,15 @@ namespace DarkAndGrittyGunplay.Features
             }
             else
             {
-                transform.position = e.OldPosition + pair.Value + schematicInfo.PositionOffset;
+                transform.position = deathInfo.OldPosition + boneAndOffset.Value + schematicInfo.PositionOffset;
                 transform.rotation = Quaternion.Euler(schematicInfo.RotationOffset);
             }
 
             var rb = gameObject.AddComponent<Rigidbody>();
-            rb.AddForce((pair.Value + new Vector3(0, 0.25f, 0)) * 1000 + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
+            rb.AddForce((boneAndOffset.Value + new Vector3(0, 0.25f, 0)) * 1000 + (new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1.5f), Random.Range(-1f, 1f)) * 700));
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
-            if (!despawnWhenBlood)
+            if (!despawnOnCollision)
             {
                 Timing.CallDelayed(Plugin.Singleton.Config.GibPhysicsLifetime + Random.Range(0f, Plugin.Singleton.Config.GibPhysicsLifetimeVariance), () =>
                 {
