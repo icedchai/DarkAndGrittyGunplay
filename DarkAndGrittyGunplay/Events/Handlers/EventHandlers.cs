@@ -1,6 +1,7 @@
 ﻿using AdminToys;
 using DarkAndGrittyGunplay.Configs;
 using DarkAndGrittyGunplay.Features;
+using DarkAndGrittyGunplay.Features.Extensions;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Events.Handlers;
 using LabApi.Features.Wrappers;
@@ -21,6 +22,21 @@ namespace DarkAndGrittyGunplay.Events.Handlers;
 
 public class EventHandlers
 {
+    private bool ShouldExplodePlayer(RoleTypeId role, DamageHandlerBase damageHandler, out GibEffectOption gibEffectOption)
+    {
+        return ShouldExplodeRole(role) & ShouldExplodeDamageHandler(damageHandler, out gibEffectOption);
+    }
+
+    private bool ShouldExplodeRole(RoleTypeId role)
+    {
+        return role.IsHuman() || role == RoleTypeId.Scp0492 || role == RoleTypeId.Scp049;
+    }
+
+    private bool ShouldExplodeDamageHandler(DamageHandlerBase damageHandler, out GibEffectOption gibEffectOption)
+    {
+        return Plugin.Singleton.Config.AllowedExplosionDeaths.TryGetValue(damageHandler.GetDamageType(), out gibEffectOption);
+    }
+
     public void SubscribeEvents()
     {
         PlayerEvents.ChangedRole += OnPlayerChangedRole;
@@ -127,9 +143,9 @@ public class EventHandlers
                     spawnedGibs.Add(goreBit);
                     goreBit.gameObject.AddComponent<SphereCollider>();
                 }
+
                 foreach (SerializedSchematic gib in goreSpecs.Gibs)
                 {
-                    
                     if (!MapUtils.TryGetSchematicDataByName(gib.SchematicName, out SchematicObjectDataList data))
                     {
                         continue;
@@ -180,34 +196,19 @@ public class EventHandlers
         gibs.Add(e.Player, spawnedGibs);
     }
 
-    private bool ShouldExplodePlayer(RoleTypeId role, DamageHandlerBase damageHandler)
-    {
-        return ShouldExplodeRole(role) && ShouldExplodeDamageHandler(damageHandler);
-    }
-
-    private bool ShouldExplodeDamageHandler(DamageHandlerBase damageHandler)
-    {
-        return damageHandler is ExplosionDamageHandler || damageHandler is Scp096DamageHandler || (damageHandler is Scp939DamageHandler dh939 && dh939.Scp939DamageType == Scp939DamageType.LungeTarget) || damageHandler is JailbirdDamageHandler;
-    }
-
-    private bool ShouldExplodeRole(RoleTypeId role)
-    {
-        return role.IsHuman() || role == RoleTypeId.Scp0492 || role == RoleTypeId.Scp049;
-    }
-
     private void OnPlayerSpawningRagdoll(PlayerSpawningRagdollEventArgs e)
     {
-        if (!ShouldExplodePlayer(e.Player.Role, e.DamageHandler))
+        if (!ShouldExplodePlayer(e.Player.Role, e.DamageHandler, out var gibEffectOption))
         {
             return;
         }
 
-        e.IsAllowed = false;
+        e.IsAllowed = !gibEffectOption.DisallowRagdoll;
     }
 
     private void OnPlayerDeath(PlayerDeathEventArgs e)
     {
-        if (!ShouldExplodePlayer(e.OldRole, e.DamageHandler))
+        if (!ShouldExplodePlayer(e.OldRole, e.DamageHandler, out var gibEffectOption) || !gibEffectOption.ExplodeOnDeath)
         {
             return;
         }

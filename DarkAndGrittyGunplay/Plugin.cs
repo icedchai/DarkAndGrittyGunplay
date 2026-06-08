@@ -16,7 +16,7 @@ public class Plugin : Plugin<Config>
     public override string Author => "icedchqi";
 
     /// <inheritdoc/>
-    public override Version Version => new Version(1, 1, 1);
+    public override Version Version => new Version(1, 2);
 
     /// <inheritdoc/>
     public override Version RequiredApiVersion => new Version(LabApiProperties.CompiledVersion);
